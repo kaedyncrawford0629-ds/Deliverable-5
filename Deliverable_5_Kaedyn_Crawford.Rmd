@@ -1,0 +1,405 @@
+---
+title: "Deliverable 5"
+output: html_document
+date: "2026-11-11"
+---
+# Deliverable 5
+
+## 1. Libraries
+
+```{r}
+library(ggplot2)  #to create charts
+library(dplyr)  #to manipulate data/summaries
+library(plotly) #make charts interactive
+jobs <- read.csv("ai_jobs_salaries_clean.csv")  #dataset
+```
+
+## 2. Summary
+
+  This project analyzed the AI Jobs Salaries dataset to better understand factors that influence compensation within the artificial intelligence workforce. This data set contains 71,913 job records and includes information about salaries, experience levels, company characteristics, job titles, and work arrangements. The goal of this project was to examine how salary varies across experience levels, company sizes, remote work arrangements, job titles, and time.
+
+  This data was analyzed using descriptive statistics, frequency tables, summary tables, and visualizations created with ggplot2. Histograms, box plots, bar charts, scatter plots, and trend charts were used to explore salary patterns and compare groups. The results showed that the salary generally increases with experience level and that higher experience levels tend to have greater salary variability. Average AI salaries increased noticeably between 2021 and 2024 before stabilizing in 2025. Company size was also associated with salary differences, although medium-sized companies sometimes offered salaries comparable to or higher than large companies. Overall, experience level emerged as one of the strongest factors associated with compensation within the AI workforce. 
+  
+
+## 3. Purpose
+
+  The purpose of this analysis it to analyze the salary trends within the artificial intelligence job industry and identify the factors that influence employee compensation. Using this AI Jobs Salaries data set, I am investigating the relationship between salary and employee characteristics such as experience level, company size, work arrangement, and job title. 
+  
+The primary questions addressed in this analysis are:
+    1. How does salary vary across experience levels?
+    2. How have AI salaries changed over time?
+    3. Does remote work influence salary levels?
+    4. How does company size affect employee compensation?
+    5. Which AI job titles recieve the highest average salaries?
+
+
+## 4. Data
+
+### Part a)
+
+| Variable Name          | Represents                         | Type        | R Type    | Units             |
+| :--------------------- | :--------------------------------- | :---------- | :------- | :---------------- |
+| work_year              | Year salary was reported           | Numerical   | Integer  | Year              |
+| experience_level       | Experience code                    | Categorical | Character| N/A               |
+| employment_type        | Employment type code               | Categorical | Character| N/A               |
+| job_title              | Position title                     | Categorical | Character| N/A               |
+| salary                 | Original reported salary           | Numerical   | Numeric  | Original currency |
+| salary_currency        | Currency used for salary           | Categorical | Character| Currency Code     |
+| salary_in_usd          | Salary converted to USD            | Numerical   | Numeric  | USD               |
+| employee_residence     | Employees country of residence     | Categorical | Character| N/A               |
+| remote_ratio           | Remote work percentage             | Numerical   | Numeric  | Percent           |
+| company_location       | Location of company                | Categorical | Character| N/A               |
+| company_size           | Size of company                    | Categorical | Factor   | N/A               |
+| experience_level_label | Experience description             | Categorical | Factor   | N/A               |
+| employment_type_label  | Employment description             | Categorical | Factor   | N/A               |
+| work_mode              | Work Arrangement                   | Categorical | Factor   | N/A               |
+| salary_outlier_flag    | Identifies salary outliers         | Categorical | Logical  | N/A               |
+| role_family            | Grouped job category               | Categorical | Factor   | N/A               |
+| isco_group_hint        | Occupational classification        | Categorical | Factor   | N/A               |
+| remote_work            | Category created from remote_ratio | Categorical | Factor   | N/A               |
+
+
+### Part b)
+
+This dataset contains 71,913 observations and 17 variables. A review of the dataset found no missing(NA), null, or blank values in any variables. Since there are no missing values no observations need to be removed and no values were imputed. So the complete dataset is available for analysis.
+
+
+### Part c)
+
+```{r}
+jobs <- jobs %>%
+  mutate(remote_work = factor(remote_ratio, 
+                levels = c(0, 50, 100), 
+                labels = c("On-Site", "Hybrid", "Fully Remote")
+              )
+         )
+
+salary_trend <- jobs %>%
+  group_by(work_year) %>%
+  summarise(avg_salary = mean(salary_in_usd))
+
+salary_exp_level <- jobs %>%
+  group_by(work_year, experience_level_label) %>%
+  summarise(avg_salary = mean(salary_in_usd))
+
+salary_job <- jobs %>%
+  group_by(job_title) %>%
+  summarise(avg_salary = mean(salary_in_usd), count = n())
+
+salary_job_no_outliers <- salary_job %>%
+  filter(count < 2000)
+
+salary_by_company_exp <- jobs %>%
+  group_by(company_size, experience_level_label) %>%
+  summarise(avg_salary = mean(salary_in_usd))
+
+top_jobs <- jobs %>%
+  group_by(job_title) %>%
+  summarise(avg_salary = mean(salary_in_usd), count = n()) %>%
+  filter(count >= 10) %>%
+  arrange(desc(avg_salary)) %>%
+  slice_head(n = 10)
+```
+
+  The original data set was already in tidy format as each row representing a single job record and each of the columns represent one variable. Therefore, I did not have to major reconstructing such as *pivot_longer()* or *pivot_wider()* as it wasn't necessary.
+  
+  Several data cleaning and preparation steps were preformed before analysis. The dataset already contained descriptive variables such as *experience_level_label* and *employment_type_label*, which provided readable versions of coded categories. A new variable  *remote_work* was created to improve readability. It was created from *remote_ratio* using the *mutate()* and categorized employees as On-Site, Hybrid, or Fully Remote. Additional summary datasets were also created using the functions such as *group_by()* and *summarize()* to support my visualizations. These include salary_trends, salary_exp_level, salary_job, salary_job_no_outliers, salary_by_company_exp, and top_jobs. These summary datasets simplified the calculation of the averages and trends used throughout the report.
+
+```{r}
+head(jobs)
+```
+The first rows of the dataset are displayed above to illustrate the structure of the data and the variables available for analysis.
+
+```{r}
+dim(jobs)
+```
+This dataset contains 71,913 rows and 17 columns, each row representing a single job record and each column represents a specific variable describing that job. 
+
+
+
+## 5. Exploratory Data Analysis
+
+### Figure 1 - Histogram of the Salaries
+
+Distribution of one variable
+```{r}
+ggplot(jobs, aes(x = salary_in_usd)) +
+  geom_histogram(fill = "lightblue", color = "black") +
+    labs(
+      title = "Distribution of AI Job Salaries in USD",
+      x = "Salary(USD)",
+      y = "Number of Employees"
+    )
+```
+
+This figure shows the distribution of salaries in the AI jobs using the variable *salary_in_usd*. Most of these salaries are concentrated within the lower and middle ranges, while a smaller number of jobs receive considerably higher salaries. This distribution is positively skewed, so that means the salary ranges extends further towards the high-income values. This suggests that while many AI professional could earn competitive salaries, only a small percentage occupy the highest paying positions. Which also suggested that advanced leadership and specialized AI roles have a significantly higher compensation. The next thing I would next examine would be whether experience level, job title, or company size contributes most to these higher earnings.
+
+
+### Figure 2 - Bar Chart of Amount of Jobs for Each Experience Level
+
+Comparison across groups
+```{r}
+ggplot(jobs, aes(x = experience_level_label)) +
+  geom_bar(fill = "lightgreen") +
+    labs(
+      title = "Job Count by Experience Level",
+      x = "Experience Level",
+      y = "Job Count"
+    )
+```
+
+This figure compares salary distribution across experience levels using the variable *experience_level_label* and *salary_in_usd*. The salaries generally increase as experience levels increase, with senior-level employees having the highest earnings. This relationship suggests that having professional experience is an important factor that determines compensation. Even with the same experience level salaries can differ, so it is not the only thing affecting the pay. Other variables play an important role in determining salary as well.
+
+
+### Figure 3 - Boxplot of Salary by Experience Level
+
+```{r}
+ggplot(jobs, aes(x = experience_level_label, y = salary_in_usd)) +
+  geom_boxplot(fill = "lightgreen") +
+    labs(
+      title = "Salary Distribution by Experience Level",
+      x = "Experience Level",
+      y = "Salary (USD)"
+    )
+```
+
+This figure compares salary distributions across experience levels using the variables *experience_level_label* and *salary_in_usd*. The boxplot displays the median salary, spread of salaries, and potential outliers for each experience level. The chart shows that salaries generally increase as experience levels. It appears that the entry level salaries is relatively concentrated, while mid and senior level salaries have a wider spread, and executive level salaries have the widest spread. Which tells us that employees with the same experience level and vary, especially at higher levels.
+
+
+### Figure 4 - Boxplot of Salary Compared to Working Remote
+
+Relationship between two numerical values
+```{r}
+ggplot(jobs, aes(x = remote_ratio, y = salary_in_usd, fill = remote_work)) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("lavender", "plum", "purple")) +
+    labs (
+      title = "Salary Distribution by Remote Work Percentage",
+      x = "Remote Ratio (%)",
+      y = "Salary (USD)"
+    )
+```
+
+
+This figure compare the salary distribution across different work arrangements using the variables *remote_work* and *salary_in_usd*. This box plot shows the median salary, the spread of salaries, and potential outliers for each type of position. This figure suggests that Fully Remote and On-Site generally have higher salary distributions than the Hybrid position. All three contain a wide range of salaries, having numerous high-salary outliers, especially Fully Remote and On-Site. This indicates that employees within the same work arrangement can earn substantially different amounts. Because of this variability this suggests that factors outside of work arrangement influence compensation. As from these results, work status alone does not appear to be the strongest predictor of salary. Other variables, such as experience level, company size, and job role could influence earnings.
+
+
+### Figure 5 - Salary Trend Overtime
+
+Trend over time
+```{r}
+ggplot(salary_trend, aes(x = work_year, y = avg_salary)) +
+  geom_line(color = "lightblue", linewidth = 1.2) +
+  geom_point(color = "lightblue", size = 3) +
+    labs(
+      title = "Average AI Salary Over Time",
+      x = "Year",
+      y = "Average Salary (USD)"
+    )
+```
+
+This figure displays the average salary over time using the variables *work_year* and *salary_in_usd*. The chart illustrates how average compensation levels have changed across the years represented in the data set (2020-2025). It appears that the average salary decreased slightly from 2020 to 2021, followed by a substantial increase from 2021 through 2024. The average salaries then remained relatively stable between 2024 and 2025.This trend in average salary suggests that AI-related occupations experienced strong salary growth within the period represented within the data set. An explanation for this increased demand could reflect growth in demand for AI professionals, changing market conditions, or evolving industry priorities. The salaries increasing suggest that AI-related skills have become increasing valuable within the labor market. Additional analysis could investigate whether salary growth occurred equally across experience levels or whether higher- level positions benefited more strongly from the increase in demand. 
+
+
+### Figure 6 - Salary Growth by Experience Level
+
+```{r}
+ggplot(salary_exp_level, aes(x = work_year, y = avg_salary, color = experience_level_label)) +
+  geom_line(linewidth = 1.2) +
+  geom_point(color = "lightblue", size = 3) +
+  scale_color_manual(values = c(
+    "Entry-level" = "lightgreen",
+    "Mid-level" = "#a6dba0",
+    "Senior-level" = "#5aae61",
+    "Executive-level" = "#1b7837"
+  )) +
+    labs(
+      title = "Average Salary Growth by Experiance Level",
+      x = "Year",
+      y = "Average Salary (USD)",
+      color = "Experience Level"
+    )
+```
+
+This figure displays average salary trends over time for each experience level using the variables *work_year*, *salary_in_usd*, and *experience_level_label*. The chart compares how the salaries change between 2020 through 2025 for entry-level, mid-level, senior-level, and executive-level employees. This graph shows that most experience levels experienced a small decline in 2021 before the salaries increased substantially through 2024. This suggests that salary growth occurred across all experience levels, but the higher-level positions continues to receive the greatest compensation. The experience levels not overlapping at all suggests that experience plays a significant role in determining salary within AI-related careers. A useful next step would be to investigate other factors such as job title and company size could contribute to these differences and weather certain industries experienced strong salary growth.
+
+
+### Figure 7 - Scatterplot Comparing Average Salary Between Count of Job Records  
+
+Relationship between two numerical values
+```{r}
+interactive_sp <- ggplot(salary_job_no_outliers, aes(x = count, y = avg_salary)) + 
+  geom_point(color = "lightblue") +
+  scale_x_log10() +
+    labs(
+      title = "Average Salary by Number of Job Records",
+      x = "Number of Records",
+      y = "Average Salary (USD)"
+    )
+ggplotly(interactive_sp)
+```
+
+This figure shows the relationship between the number of job records for a given job title and the average salary associated with that job title. The variables used are *count* and *avg_salary* calculated for each job title. This scatter plot shows a large variable in average salary across the job title regardless of how frequently those positions appear in the data-set. These results suggest that the popularity/frequency of a job title is not strongly related to average compensation. So the next useful step would be to identify which job titles are associated with the highest salaries 
+
+
+### Figure 8 - Boxplot of Salary Distribution by Company Size
+
+Relationship between two numerical values
+```{r}
+ggplot(jobs, aes(x = company_size, y = salary_in_usd, fill = company_size)) +
+  geom_boxplot() +
+  scale_fill_manual (values = c(
+    "S" = "lavender", 
+    "M" = "plum", 
+    "L" = "purple"
+  )) +
+    labs(
+      title = "Salary Distribution by Company Size",
+      x = "Company Size",
+      y = "Salary (USD)"
+    )
+```
+This figure compares salary distributions across different company sizes using the variable *company_size* and *salary_in_usd*. The boxplots show the median salary, salary spread, and the outliers for the small, medium, and large companies. This chart suggests employees working for medium and large companies generally tend to earn higher salaries than the employees at smaller organizations. Although there is an overlap between the groups, medium company's appear to have the widest range of salaries. They have the widest range and the largest number of high-salary outliers so there is substantial variation in compensation. This could be explained by the larger companies having a greater financial resources and a higher demand for the specialized AI talent. A useful next step would be to examine whether employees with similar experience levels receive different compensation depending the company size.
+
+
+### Figure 9 - Average Salary by Company Size and Experience Level
+
+```{r}
+ggplot(salary_by_company_exp, aes(x = experience_level_label, y = avg_salary, fill = company_size)) +
+  geom_col(position = "dodge", color = "black") +
+  scale_fill_manual(values = c(
+    "S" = "lavender", 
+    "M" = "plum", 
+    "L" = "purple"
+  )) +
+    labs(
+      title = "Average Salary by Experience Level and Company Size",
+      x = "Experience Level",
+      y = "Average Salary (USD)",
+      fill = "Company Size"
+    )
+```
+
+This figure compares average salaries across experience levels and company sizes using the variables *experience_level_label*, *company_size*, and *salary_in_usd*.This grouped bar chart allows the salary to be compared within each experience level while also taking company size into affect. This chart shows that salaries generally increase as experience levels increase, and this is regardless of the company size. This graph also suggests that medium sized companions generally offer salaries that are comparable or higher than those offered by the large company, which supports the Box Plot figure above. Which suggests that company size doesn't have a perfectly linear relationship with salary. A possible explanation is that medium-sized companies offer higher compensation to attract and reason skill AI professionals to be able to compete with the larger organizations.
+
+### Figure 10 - verage Salary by Company Size and Experience Level Boxplot
+
+```{r}
+ggplot(jobs,
+       aes(x = experience_level_label,
+           y = salary_in_usd,
+           fill = company_size)) +
+  geom_boxplot() +
+  scale_fill_manual(values = c(
+    "S" = "lavender",
+    "M" = "plum",
+    "L" = "purple"
+  )) +
+  labs(
+    title = "Salary Distribution by Experience Level and Company Size",
+    x = "Experience Level",
+    y = "Salary (USD)",
+    fill = "Company Size"
+  )
+```
+This figure contains the same information as the chart above (figure 9) but in box plot form to better display salary distributions, spread, and variability of salaries within each group. Unlike the grouped bar chart this box plot allows for a comparison of medium salaries, ranges, and potential outliers. This box plot further suggests that medium-sized and large companies often offer similar salary distributions, with medium-sized companies occasionally exhibiting higher medium-sized companies outlines. This pattern supports the chart above, while providing additional insight into the variation of salaries within each company size category.
+
+
+### Figure 11 - Top 10 Highest Paying Job Titles
+
+```{r}
+ggplot(top_jobs, aes(x = reorder(job_title, avg_salary), y = avg_salary)) +
+  geom_col(fill = "lightblue") +
+  coord_flip() +
+    labs(
+      title = "Top 10 Highest-Paying AI Job Titles",
+      x = "Job Title",
+      y = "Average Salary (USD)"
+    )
+```
+
+This figure displays the ten job titles with the highest average salary using the variables *job_title* and *salary_in_usd*. Only job titles with at least ten records observations were includes to avoid the results be influenced from very small sample sizes. This chart suggests that specialized and leadership-focused AI positions have the highest salary in the industry. This finding supports that technical expertise makes you an high value employee. An explanation for this is that these positions require extensive experience, specialized knowledge, and strategic decision-making. One of the next things I will examine is whether remote, hybrid and in person positions show any salary differences after accounting for the experience levels.
+
+
+### Frequency Tables Requirement
+
+```{r}
+table(jobs$experience_level_label)
+
+table(jobs$company_size)
+
+table(jobs$remote_work)
+```
+**Experience Level Frequency Table:** This table displays the frequency of jobs across experience levels. Senior-level positions represent the largest portion of the dataset, while entry-level positions account for the smallest portion of the data. This suggests that the AI workforce represented in this dataset is primarily composed of experienced professionals rather than individuals just entering the field.
+
+**Company Size Frequency Table:** This table summarizes the distribution of company sizes. Medium-sized companies account for the largest number of observations, while small company appear less frequently out of all the sizes. Because medium-sized companies represents a large portion of the dataset, trends involving company size may be influence by their greater representation. 
+
+**Remote Work Frequency Table:** This table shows the distribution of work arrangements. On-site and fully remote positions appear more frequently than hybrid positions. This indicates that hybrid work arrangement are less common within the dataset compared to traditional on-site or fully remote employment.
+
+
+### Summary Tables Requirement
+
+```{r}
+jobs %>%
+  group_by(experience_level_label) %>%
+  summarise(
+    Mean_Salary = mean(salary_in_usd),
+    Median_Salary = median(salary_in_usd)
+  )
+```
+This table summarizes mean and median salaries by experience level. Both statistics increase consistently from entry-level to executive-level positions, indicating a strong positive relationship between experience and compensation. The differences between the mean and median suggest that there are high-salary outliers in some groups.
+
+
+## 6. Results
+
+### a) Analysis Method
+
+  Several analysis techniques were used throughout this project. The dplyr functions *group_by()* and *summarize()* were used to calculate the average salaries across groups, while the *ggplot2()* was used to create visualizations. Histograms were used to examine distributions, box plots were used to compare salary distributions between groups, bar charts summarized categorical variables, and line charts were used to evaluate trends over time.
+  
+### b) Why These Methods
+
+  I selected these methods were selected because the project focuses on understanding relationship and patterns within the data rather than making predictions. Group summaries provided a very straightforward way to compare the salaries across categories such as experience level and company size. The visualizations make the trends and differences easier to see and interpret. Because salary is a continuous variable and several explanatory variables are categorical, box plots, and grouped summary statistic were the best forms on visualizations. While the scatterplots visuals did not provide clear and concise visuals do to the type of variables I have. 
+
+### c) Findings
+
+#### Question 1 - How does salary vary across experience levels?
+
+Salary increases substantially with experience level. The boxplot comparing salary distributions across experience groups (Figure 3) shows that executive-level and senior-level employees earn considerably more than entry-level employees. Salary variability also increases with experience levels, which indicates greater variation in compensation among more experience workers. The salary by company size and experience box plot (figure 10), further support this finding. Across the small, medium, and large company sizes the salaries consistently increase as experience level increase. While company size appears to influence salary in some cases, the overall pattern remains the same regardless of company size. These result suggest that experience level is one of the strongest factors associate with compensation in the AI workforce.
+
+#### Question 2 - How have AI job salaries changed over time?
+
+AI salaries changed noticeably between 2020 and 2025, which can be supported by figure 5 and figure 6. The average salary declined slightly between 2020 and 2021, the increased steadily through 2024 before starting to stabilizing in 2025. This overall upward trend suggests that there is a growing demand for AI professionals during this recorded period. The experience-level trend chart shows that salary growth occurred across all experience groups, and during this recorded period the higher experience levels maintain higher average salaries compared to the lower experience levels.
+
+#### Question 3 - Does remote work influence salary levels?
+
+Salary distributions differ across work arrangements which is supported by figure 4. Fully remote and on-site positions generally display higher salary distributions then the hybrid potions. However, there is overlap between the groups, while they also have considerable variation within each of the categories. This suggests that remote work status alone is not a strong predictor od salary and that the other factors such as experience, company size, and job role likely play a larger role.
+
+#### Question 4 - How does company size affect compensation?
+
+Company size appears to have an influence on employee compensation, which is supported by figure 8 and figure 9. Small companies generally offer lower salaries than the medium and large companies, while the medium-sized companies show the widest salary ranges with several high-paying outliers. The grouped salary averaged indicate that compensation increase with experience regardless of the company size. Although interesting enough the medium-sized companies frequently offer salaries comparable to or even exceeding those of large companies, suggesting that company size does not have a perfectly linear relationship with salary. 
+
+#### Question 5 - Which job titles recieve the highest average salaries?
+
+The highest average salaries are associated with specialized and leadership-oriented AI positions, which is supported by figure 11 and figure 7. The top-paying job title analysis shows that advanced technical and management roles consistently appear among the highest paying jobs. The job-title salary scatterplot illustrations that average salary varies substantially across occupations and that job frequency is not strongly related to compensation. These findings suggest that job specialization is another importnat factor influenceing salary levels. 
+
+
+## 7. Conclusions
+
+  This analysis examined salary patterns within the AI job industry using a dataset of over 71,000 job records. The analysis focused on how salary varies based on experience level, work arrangement, company size, and job title. Through the use of summary statistics, frequency tables, box plots, trend charts, and grouped comparisons, several important salary patterns were identified. 
+  
+  The results suggest that experience level is one of the strongest factors associated with salary. Salaries consistently increased from entry-level to executive-level positions, and higher experience levels generally showed greater salary variation. Salary trends over time indicated that average AI salaries increased a considerably between 2021 and 2024 before stabilizing in 2025. Company size also appeared to influence compensation, although the relationship was not perfectly linear, as medium-sized companies often offered salaries comparable to or higher than large companies. While there are differences between remote work arrangements, remote status appears to have a weaker relationship with salary than the experience level and company size. 
+  
+  This study however does have some limitations. Although the dataset contains a large number of observations, it does not include potentially important factors such as education level, certifications, employer reputation, or employee performance. Additionally, the analysis identifies relationships within the data but cannot determine whether one variable directly causes another. Future research could examine salary difference across countries, industries, or specific AI specialties. Further investigation into how experience level, company size, and work arrangement interact may also provide a deeper understanding of compensation patterns within the AI workforce. 
+
+
+## 8. References
+
+Data Source -
+[AI Impact On Jobs and Salaries dataset](https://www.kaggle.com/datasets/debayank2024/ai-impact-on-jobs-and-salaries-2020-2026) by Debayan Bandyopadhyay
+
+Textbook -
+Programming Skills for Data Science Start Writing Code to Wrangle, Analyze, and Visualize Data with R
+
+
+
+
