@@ -30,7 +30,7 @@ The primary questions addressed in this analysis are:
     2. How have AI salaries changed over time?
     3. Does remote work influence salary levels?
     4. How does company size affect employee compensation?
-    5. Which AI job titles recieve the highest average salaries?
+    5. Which AI job titles receive the highest average salaries?
 
 
 ## 4. Data
@@ -272,6 +272,7 @@ ggplot(salary_by_company_exp, aes(x = experience_level_label, y = avg_salary, fi
     "M" = "plum", 
     "L" = "purple"
   )) +
+    scale_y_continuous(labels = scales::comma) +
     labs(
       title = "Average Salary by Experience Level and Company Size",
       x = "Experience Level",
