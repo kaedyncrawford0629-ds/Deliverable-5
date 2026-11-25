@@ -125,6 +125,7 @@ Distribution of one variable
 ```{r}
 ggplot(jobs, aes(x = salary_in_usd)) +
   geom_histogram(fill = "lightblue", color = "black") +
+  scale_x_continuous(labels = scales::comma) +
     labs(
       title = "Distribution of AI Job Salaries in USD",
       x = "Salary(USD)",
@@ -156,6 +157,7 @@ This figure compares salary distribution across experience levels using the vari
 ```{r}
 ggplot(jobs, aes(x = experience_level_label, y = salary_in_usd)) +
   geom_boxplot(fill = "lightgreen") +
+  scale_y_continuous(labels = scales::comma) +
     labs(
       title = "Salary Distribution by Experience Level",
       x = "Experience Level",
@@ -173,6 +175,7 @@ Relationship between two numerical values
 ggplot(jobs, aes(x = remote_ratio, y = salary_in_usd, fill = remote_work)) +
   geom_boxplot() +
   scale_fill_manual(values = c("lavender", "plum", "purple")) +
+  scale_y_continuous(labels = scales::comma) +
     labs (
       title = "Salary Distribution by Remote Work Percentage",
       x = "Remote Ratio (%)",
@@ -231,6 +234,7 @@ Relationship between two numerical values
 interactive_sp <- ggplot(salary_job_no_outliers, aes(x = count, y = avg_salary)) + 
   geom_point(color = "lightblue") +
   scale_x_log10() +
+  scale_y_continuous(labels = scales::comma) +
     labs(
       title = "Average Salary by Number of Job Records",
       x = "Number of Records",
@@ -253,6 +257,7 @@ ggplot(jobs, aes(x = company_size, y = salary_in_usd, fill = company_size)) +
     "M" = "plum", 
     "L" = "purple"
   )) +
+  scale_y_continuous(labels = scales::comma) +
     labs(
       title = "Salary Distribution by Company Size",
       x = "Company Size",
@@ -296,11 +301,12 @@ ggplot(jobs,
     "M" = "plum",
     "L" = "purple"
   )) +
-  labs(
-    title = "Salary Distribution by Experience Level and Company Size",
-    x = "Experience Level",
-    y = "Salary (USD)",
-    fill = "Company Size"
+  scale_y_continuous(labels = scales::comma) +
+    labs(
+      title = "Salary Distribution by Experience Level and Company Size",
+      x = "Experience Level",
+      y = "Salary (USD)",
+      fill = "Company Size"
   )
 ```
 This figure contains the same information as the chart above (figure 9) but in box plot form to better display salary distributions, spread, and variability of salaries within each group. Unlike the grouped bar chart this box plot allows for a comparison of medium salaries, ranges, and potential outliers. This box plot further suggests that medium-sized and large companies often offer similar salary distributions, with medium-sized companies occasionally exhibiting higher medium-sized companies outlines. This pattern supports the chart above, while providing additional insight into the variation of salaries within each company size category.
@@ -312,6 +318,7 @@ This figure contains the same information as the chart above (figure 9) but in b
 ggplot(top_jobs, aes(x = reorder(job_title, avg_salary), y = avg_salary)) +
   geom_col(fill = "lightblue") +
   coord_flip() +
+  scale_y_continuous(labels = scales::comma) +
     labs(
       title = "Top 10 Highest-Paying AI Job Titles",
       x = "Job Title",
