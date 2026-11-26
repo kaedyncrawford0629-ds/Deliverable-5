@@ -11,7 +11,7 @@ date: "2026-11-11"
 library(ggplot2)  #to create charts
 library(dplyr)  #to manipulate data/summaries
 library(plotly) #make charts interactive
-jobs <- read.csv("ai_jobs_salaries_clean.csv")  #dataset
+jobs <- read.csv("../Data/ai_jobs_salaries_clean.csv")  #dataset
 ```
 
 ## 2. Summary
